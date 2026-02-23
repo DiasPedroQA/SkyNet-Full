@@ -9,7 +9,7 @@ BACKEND_DIR := backend
 FRONTEND_DIR := frontend
 
 .PHONY: help setup dev backend frontend build up \
-        test coverage lint format clean
+        test coverage lint format clean lint-frontend format-frontend
 
 # ===================================
 # Help
@@ -36,8 +36,12 @@ help:
 	@echo "    make coverage      - Gera relatório de cobertura"
 	@echo ""
 	@echo "  🔧 Qualidade"
-	@echo "    make lint          - Verifica código (ruff)"
-	@echo "    make format        - Formata código (ruff)"
+	@echo "    make lint          - Verifica código backend e frontend"
+	@echo "    make lint-backend  - Verifica apenas backend (com config)"
+	@echo "    make lint-frontend - Verifica apenas frontend"
+	@echo "    make format        - Formata código backend e frontend"
+	@echo "    make format-backend - Formata apenas backend (com config)"
+	@echo "    make format-frontend - Formata apenas frontend"
 	@echo ""
 	@echo "  🧹 Limpeza"
 	@echo "    make clean         - Remove arquivos temporários"
@@ -101,19 +105,33 @@ coverage:
 	@echo "📁 Relatório HTML gerado em $(BACKEND_DIR)/htmlcov/"
 
 # ===================================
-# Qualidade
+# Qualidade - Backend (com configuração explícita)
 # ===================================
-lint:
-	@echo "🔍 Verificando código backend..."
-	cd $(BACKEND_DIR) && .venv/bin/ruff check .
-	@echo "🔍 Verificando código frontend..."
-	cd $(FRONTEND_DIR) && npm run lint 2>/dev/null || echo "⚠️  Lint do frontend não configurado"
+lint-backend:
+	@echo "🔍 Verificando código backend com configuração..."
+	cd $(BACKEND_DIR) && .venv/bin/ruff check . --config pyproject.toml
 
-format:
-	@echo "✨ Formatando código backend..."
-	cd $(BACKEND_DIR) && .venv/bin/ruff check . --fix
+format-backend:
+	@echo "✨ Formatando código backend com configuração..."
+	cd $(BACKEND_DIR) && .venv/bin/ruff check . --config pyproject.toml --fix
+
+# ===================================
+# Qualidade - Frontend
+# ===================================
+lint-frontend:
+	@echo "🔍 Verificando código frontend..."
+	@cd $(FRONTEND_DIR) && npm run lint 2>/dev/null || echo "⚠️  Lint do frontend não configurado (crie um script 'lint' no package.json)"
+
+format-frontend:
 	@echo "✨ Formatando código frontend..."
-	cd $(FRONTEND_DIR) && npm run format 2>/dev/null || echo "⚠️  Format do frontend não configurado"
+	@cd $(FRONTEND_DIR) && npm run format 2>/dev/null || echo "⚠️  Format do frontend não configurado (crie um script 'format' no package.json)"
+
+# ===================================
+# Qualidade - Combinados
+# ===================================
+lint: lint-backend lint-frontend
+
+format: format-backend format-frontend
 
 # ===================================
 # Limpeza
@@ -129,5 +147,21 @@ clean:
 		$(FRONTEND_DIR)/dist \
 		$(FRONTEND_DIR)/.vite \
 		$(FRONTEND_DIR)/node_modules/.vite \
-		$(FRONTEND_DIR)/coverage
+		$(FRONTEND_DIR)/coverage \
+		$(FRONTEND_DIR)/.eslintcache
 	@echo "✅ Limpeza concluída!"
+
+# ===================================
+# Utilitários
+# ===================================
+ruff-version:
+	@echo "🐍 Versão do Ruff:"
+	@cd $(BACKEND_DIR) && .venv/bin/ruff --version
+
+ruff-show-config:
+	@echo "🔧 Configuração do Ruff:"
+	@cd $(BACKEND_DIR) && .venv/bin/ruff check . --show-settings | grep -E "line-length|config"
+
+check-ruff-config:
+	@echo "🔍 Verificando se o Ruff está lendo a configuração correta..."
+	@cd $(BACKEND_DIR) && .venv/bin/ruff check . --config pyproject.toml --no-cache | head -10 || echo "✅ Nenhum erro encontrado!"

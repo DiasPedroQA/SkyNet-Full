@@ -114,10 +114,7 @@ def formatar_tamanho(tamanho_bytes: int) -> str:
 
 def identificar_tipo(caminho: Union[str, Path]) -> str:
     """Identifica o tipo genérico de um arquivo."""
-    if isinstance(caminho, str):
-        extensao = Path(caminho).suffix.lower()
-    else:
-        extensao = caminho.suffix.lower()
+    extensao = Path(caminho).suffix.lower() if isinstance(caminho, str) else caminho.suffix.lower()
     return TIPOS_ARQUIVO.get(extensao, "desconhecido")
 
 

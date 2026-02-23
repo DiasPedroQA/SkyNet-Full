@@ -1,7 +1,9 @@
+# flake8: E501
 # pylint: disable=too-many-instance-attributes, wrong-import-order, import-error
 
 """Modelos base para o sistema de arquivos com auto-detecção"""
 
+import contextlib
 import mimetypes
 import pwd
 from datetime import datetime
@@ -320,10 +322,8 @@ class CaminhoBase(BaseModel):
                 self.itens.append(item_info)
 
                 if item_path.is_file():
-                    try:
+                    with contextlib.suppress(OSError, PermissionError):
                         self.tamanho_total += item_path.stat().st_size
-                    except (OSError, PermissionError):
-                        pass
 
             self.quantidade_itens = len(self.itens)
             self.tamanho_bytes = self.tamanho_total

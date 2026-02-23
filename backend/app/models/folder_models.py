@@ -4,6 +4,7 @@
 
 """Modelo especializado para pastas/diretórios do sistema"""
 
+import contextlib
 from pathlib import Path
 from typing import Any, Union
 
@@ -173,10 +174,8 @@ class PastaInfo(CaminhoBase):
         if self._path_obj:
             for arquivo in self._path_obj.rglob("*"):
                 if arquivo.is_file():
-                    try:
+                    with contextlib.suppress(OSError, PermissionError):
                         total += arquivo.stat().st_size
-                    except (OSError, PermissionError):
-                        pass
 
         self.tamanho_total = total
         return total
