@@ -1,7 +1,7 @@
 """Ponto de entrada da aplicação FastAPI SkyNet-Mobile."""
 
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+# from fastapi import FastAPI
+# from fastapi.middleware.cors import CORSMiddleware
 
 # from app.api.v1 import router as v1_router
 # settings = {

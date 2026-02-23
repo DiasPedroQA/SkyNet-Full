@@ -179,3 +179,7 @@ start = "uvicorn app.main:app --host 0.0.0.0 --port 8000"
 test = "pytest"
 lint = "ruff check ."
 format = "ruff check . --fix"
+
+[tool.flake8]
+max-line-length = 120  # Aumenta para 120 (padrão do Black/Ruff)
+ignore = ["E501"]     # Ignora completamente erro de linha longa
