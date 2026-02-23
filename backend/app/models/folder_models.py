@@ -1,6 +1,5 @@
 # pylint: disable=E0401,no-name-in-module
 # pyright: reportCallIssue=false
-# type: ignore[call-arg]
 
 """Modelo especializado para pastas/diretórios do sistema"""
 
@@ -31,9 +30,7 @@ class PastaInfo(CaminhoBase):
     # ATRIBUTOS ESPECÍFICOS
     # ========================================================================
     tipo: str = Field("pasta", description="Tipo do item (sempre 'pasta')")
-    incluir_subpastas: bool = Field(
-        False, description="Se deve incluir recursivamente o conteúdo das subpastas"
-    )
+    incluir_subpastas: bool = Field(False, description="Se deve incluir recursivamente o conteúdo das subpastas")
     objetos_itens: list[Union[ArquivoInfo, "PastaInfo"]] = Field(
         default_factory=list, description="Lista de objetos dos itens da pasta"
     )
@@ -219,9 +216,7 @@ class PastaInfo(CaminhoBase):
                 tamanho=novo_item.tamanho_bytes,
                 tamanho_formatado=novo_item.tamanho_formatado,
                 extensao=getattr(novo_item, "extensao", None),
-                modificado=novo_item.data_modificacao.isoformat()
-                if novo_item.data_modificacao
-                else None,
+                modificado=novo_item.data_modificacao.isoformat() if novo_item.data_modificacao else None,
             )
             self.itens.append(item_dict)
 
@@ -247,9 +242,7 @@ class PastaInfo(CaminhoBase):
 
     def _atualizar_tamanho_total(self):
         """Atualiza o tamanho total baseado nos itens."""
-        self.tamanho_total = sum(
-            obj.tamanho_bytes or 0 for obj in self.objetos_itens if isinstance(obj, ArquivoInfo)
-        )
+        self.tamanho_total = sum(obj.tamanho_bytes or 0 for obj in self.objetos_itens if isinstance(obj, ArquivoInfo))
         self.tamanho_bytes = self.tamanho_total
 
     # ========================================================================

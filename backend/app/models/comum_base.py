@@ -11,12 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from pydantic import BaseModel, Field, PrivateAttr, field_validator
-from services.formatadores import (
-    formatar_tamanho,
-    identificar_tipo,
-    is_oculto,
-    obter_extensao,
-)
+from services.formatadores import formatar_tamanho, identificar_tipo, is_oculto, obter_extensao
 
 # ============================================================================
 # MODELO PRINCIPAL
@@ -51,13 +46,9 @@ class CaminhoBase(BaseModel):
 
     # Campos específicos
     linhas: int | None = Field(None, description="Número de linhas (arquivos de texto)")
-    itens: list[dict[str, str | int | bool]] = Field(
-        default_factory=list, description="Lista de itens da pasta"
-    )
+    itens: list[dict[str, str | int | bool]] = Field(default_factory=list, description="Lista de itens da pasta")
     quantidade_itens: int | None = Field(None, description="Quantidade de itens na pasta")
-    tamanho_total: int | None = Field(
-        None, description="Tamanho total da pasta (soma dos arquivos)"
-    )
+    tamanho_total: int | None = Field(None, description="Tamanho total da pasta (soma dos arquivos)")
 
     # ========================================================================
     # ATRIBUTOS PRIVADOS (apenas para uso interno)

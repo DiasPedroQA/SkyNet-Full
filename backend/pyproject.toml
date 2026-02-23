@@ -47,12 +47,12 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 # ============================================================================
-# RUFF CONFIGURATION (Linter e Formatter)
+# RUFF CONFIGURATION (Linter e Formatter) - ÚNICA
 # ============================================================================
 
 [tool.ruff]
-# Line length
-line-length = 120  # 👈 Mude de 88 para 120
+# Line length - agora 120
+line-length = 120
 
 # Target Python version
 target-version = "py311"
@@ -76,27 +76,20 @@ select = [
 ignore = [
     "B008", # Do not perform function calls in argument defaults
     "C408", # Unnecessary dict call
-    "E501", # line too long
+    "E501", # line too long (ignorado porque line-length=120)
 ]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = [
-    "B",      # Ignore bugbear in tests
-    "ARG",    # Ignore unused arguments in tests
-    "SIM",    # Ignore simplify in tests
+    "B",   # Ignore bugbear in tests
+    "ARG", # Ignore unused arguments in tests
+    "SIM", # Ignore simplify in tests
 ]
 
 [tool.ruff.format]
-# Use double quotes (Black's default)
 quote-style = "double"
-
-# Use spaces for indentation
 indent-style = "space"
-
-# Skip magic trailing commas
 skip-magic-trailing-comma = false
-
-# Line ending
 line-ending = "auto"
 
 # ============================================================================
@@ -178,44 +171,3 @@ start = "uvicorn app.main:app --host 0.0.0.0 --port 8000"
 test = "pytest"
 lint = "ruff check ."
 format = "ruff check . --fix"
-# ============================================================================
-# RUFF CONFIGURATION (Linter e Formatter)
-# ============================================================================
-
-[tool.ruff]
-# Line length - agora 120
-line-length = 120
-
-# Target Python version
-target-version = "py311"
-
-[tool.ruff.lint]
-# Enable recommended rules
-select = [
-    "E",   # pycodestyle errors
-    "F",   # pyflakes
-    "I",   # isort
-    "B",   # flake8-bugbear
-    "C4",  # flake8-comprehensions
-    "ARG", # flake8-unused-arguments
-    "SIM", # flake8-simplify
-]
-
-# Ignore specific rules
-ignore = [
-    "B008", # Do not perform function calls in argument defaults
-    "C408", # Unnecessary dict call
-]
-
-[tool.ruff.lint.per-file-ignores]
-"tests/*" = [
-    "B",   # Ignore bugbear in tests
-    "ARG", # Ignore unused arguments in tests
-    "SIM", # Ignore simplify in tests
-]
-
-[tool.ruff.format]
-quote-style = "double"
-indent-style = "space"
-skip-magic-trailing-comma = false
-line-ending = "auto"
