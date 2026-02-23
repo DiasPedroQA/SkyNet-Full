@@ -1,4 +1,4 @@
-# pylint: disable=E0401,no-name-in-module
+# pylint: disable=too-many-instance-attributes, wrong-import-order, import-error, line-too-long
 # pyright: reportCallIssue=false
 
 """Modelo especializado para pastas/diretórios do sistema"""
@@ -188,7 +188,7 @@ class PastaInfo(CaminhoBase):
                 return item
         return None
 
-    def encontrar_objeto_por_nome(self, nome_busca: str) -> Union[ArquivoInfo, "PastaInfo"]:
+    def encontrar_objeto_por_nome(self, nome_busca: str) -> Union[ArquivoInfo, "PastaInfo", None]:
         """Encontra um objeto na pasta pelo nome."""
         for obj in self.objetos_itens:
             if obj.nome == nome_busca:

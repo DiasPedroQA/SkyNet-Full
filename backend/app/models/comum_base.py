@@ -1,5 +1,4 @@
-# flake8: E501
-# pylint: disable=too-many-instance-attributes, wrong-import-order, import-error
+# pylint: disable=too-many-instance-attributes, wrong-import-order, import-error, line-too-long
 
 """Modelos base para o sistema de arquivos com auto-detecção"""
 
