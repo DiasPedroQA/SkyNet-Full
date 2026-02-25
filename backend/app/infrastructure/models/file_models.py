@@ -5,7 +5,6 @@
 """Modelo especializado para arquivos do sistema"""
 
 from pathlib import Path
-from typing import Any
 
 from pydantic import Field, field_validator
 from services.formatadores import (
@@ -123,7 +122,7 @@ class ArquivoInfo(CaminhoBase):
     # MÉTODOS DE FORMATAÇÃO
     # ========================================================================
 
-    def info_completa(self) -> dict[str, Any]:
+    def info_completa(self) -> dict[str, object]:
         """
         Retorna informações completas do arquivo.
         Combina dados da classe com informações formatadas.
@@ -137,9 +136,7 @@ class ArquivoInfo(CaminhoBase):
             "linhas": self.linhas,
             "mime_type": self.mime_type,
             "data_criacao": self.data_criacao.isoformat() if self.data_criacao else None,
-            "data_modificacao": self.data_modificacao.isoformat()
-            if self.data_modificacao
-            else None,
+            "data_modificacao": self.data_modificacao.isoformat() if self.data_modificacao else None,
         }
 
         return {k: v for k, v in info_arquivo.items() if v is not None}
@@ -150,9 +147,7 @@ class ArquivoInfo(CaminhoBase):
 
     def __str__(self) -> str:
         """Representação em string amigável."""
-        return (
-            f"📄 {self.nome} ({self.tamanho_formatado_arquivo}) - {self.tipo_identificado_arquivo}"
-        )
+        return f"📄 {self.nome} ({self.tamanho_formatado_arquivo}) - {self.tipo_identificado_arquivo}"
 
     def __repr__(self) -> str:
         """Representação para debug."""

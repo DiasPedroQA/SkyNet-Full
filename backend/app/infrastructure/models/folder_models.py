@@ -5,13 +5,11 @@
 
 import contextlib
 from pathlib import Path
-from typing import Any, Union
 
 from pydantic import Field, field_validator
 from services.formatadores import (
     contar_itens_por_tipo,
     filtrar_arquivos_por_extensao,
-    formatar_info_item_pasta,
     formatar_tamanho,
     resumir_conteudo_pasta,
 )
@@ -61,7 +59,7 @@ class PastaInfo(CaminhoBase):
     # ========================================================================
 
     @property
-    def info_resumida_pasta(self) -> dict[str, Any]:
+    def info_resumida_pasta(self) -> dict[str, object]:
         """Versão resumida específica para pastas."""
         info = self.info_resumida.copy()
 
@@ -77,23 +75,26 @@ class PastaInfo(CaminhoBase):
         return info
 
     @property
-    def conteudo_simples(self) -> list[dict[str, Any]]:
+    def conteudo_simples(self) -> list[dict[str, object]]:
         """Lista o conteúdo de forma simplificada."""
         if not self.is_pasta:
             return []
 
-        return [
-            formatar_info_item_pasta(
-                nome=item.get("nome", ""),
-                tipo=item.get("tipo", ""),
-                oculto=item.get("oculto", False),
-                tamanho=item.get("tamanho"),
-                tamanho_formatado=item.get("tamanho_formatado"),
-                extensao=item.get("extensao"),
-                modificado=item.get("modificado"),
-            )
-            for item in self.itens
-        ]
+        def extrair_dados_seguro(item: dict[str, object]) -> dict[str, object]:
+            """Extrai dados do item com conversão de tipos segura."""
+            return {
+                "nome": str(item.get("nome", "")),
+                "tipo": str(item.get("tipo", "")),
+                "oculto": bool(item.get("oculto", False)),
+                "tamanho": item.get("tamanho") if isinstance(item.get("tamanho"), (int, type(None))) else None,
+                "tamanho_formatado": str(item.get("tamanho_formatado"))
+                if item.get("tamanho_formatado") is not None
+                else None,
+                "extensao": str(item.get("extensao")) if item.get("extensao") is not None else None,
+                "modificado": str(item.get("modificado")) if item.get("modificado") is not None else None,
+            }
+
+        return [extrair_dados_seguro(item) for item in self.itens]
 
     # ========================================================================
     # MÉTODOS DE CARREGAMENTO
@@ -108,7 +109,7 @@ class PastaInfo(CaminhoBase):
 
         for item_info in self.itens:
             nome_item = item_info.get("nome", "")
-            if not nome_item:
+            if not nome_item or not isinstance(nome_item, str):
                 continue
 
             caminho_completo = self._path_obj / nome_item
@@ -181,7 +182,7 @@ class PastaInfo(CaminhoBase):
     # MÉTODOS DE BUSCA E FILTRO
     # ========================================================================
 
-    def encontrar_por_nome(self, nome_busca: str) -> dict[str, Any] | None:
+    def encontrar_por_nome(self, nome_busca: str) -> dict[str, object] | None:
         """Encontra um item na pasta pelo nome."""
         for item in self.itens:
             if item.get("nome") == nome_busca:
@@ -195,7 +196,7 @@ class PastaInfo(CaminhoBase):
                 return obj
         return None
 
-    def listar_arquivos_por_extensao(self, extensao: str) -> list[dict[str, Any]]:
+    def listar_arquivos_por_extensao(self, extensao: str) -> list[dict[str, object]]:
         """Lista todos os arquivos com determinada extensão."""
         return filtrar_arquivos_por_extensao(self.itens, extensao)
 
@@ -203,25 +204,41 @@ class PastaInfo(CaminhoBase):
     # MÉTODOS DE MANIPULAÇÃO
     # ========================================================================
 
-    def adicionar_item(self, novo_item: Union[ArquivoInfo, "PastaInfo", dict[str, Any]]) -> None:
+    def adicionar_item(self, novo_item: Union[ArquivoInfo, "PastaInfo", dict[str, object]]) -> None:
         """Adiciona um item à pasta (em memória)."""
         if isinstance(novo_item, (PastaInfo, ArquivoInfo)):
             self.objetos_itens.append(novo_item)
 
-            # Usa formatador para criar o dicionário do item
+            # Usa formatador para criar o dicionário do item com tipos seguros
             item_dict = formatar_info_item_pasta(
-                nome=novo_item.nome or "",
-                tipo=novo_item.tipo,
-                oculto=novo_item.oculto or False,
-                tamanho=novo_item.tamanho_bytes,
-                tamanho_formatado=novo_item.tamanho_formatado,
-                extensao=getattr(novo_item, "extensao", None),
+                nome=str(novo_item.nome or ""),
+                tipo=str(novo_item.tipo),
+                oculto=bool(novo_item.oculto or False),
+                tamanho=novo_item.tamanho_bytes if isinstance(novo_item.tamanho_bytes, (int, type(None))) else None,
+                tamanho_formatado=str(novo_item.tamanho_formatado) if novo_item.tamanho_formatado is not None else None,
+                extensao=str(getattr(novo_item, "extensao", None))
+                if getattr(novo_item, "extensao", None) is not None
+                else None,
                 modificado=novo_item.data_modificacao.isoformat() if novo_item.data_modificacao else None,
             )
             self.itens.append(item_dict)
 
         elif isinstance(novo_item, dict):
-            self.itens.append(novo_item)
+            # Converte tipos do dicionário para serem seguros
+            item_seguro = {
+                "nome": str(novo_item.get("nome", "")),
+                "tipo": str(novo_item.get("tipo", "")),
+                "oculto": bool(novo_item.get("oculto", False)),
+                "tamanho": novo_item.get("tamanho")
+                if isinstance(novo_item.get("tamanho"), (int, type(None)))
+                else None,
+                "tamanho_formatado": str(novo_item.get("tamanho_formatado"))
+                if novo_item.get("tamanho_formatado") is not None
+                else None,
+                "extensao": str(novo_item.get("extensao")) if novo_item.get("extensao") is not None else None,
+                "modificado": str(novo_item.get("modificado")) if novo_item.get("modificado") is not None else None,
+            }
+            self.itens.append(item_seguro)
 
         self.quantidade_itens = len(self.itens)
         self._atualizar_tamanho_total()
@@ -242,14 +259,18 @@ class PastaInfo(CaminhoBase):
 
     def _atualizar_tamanho_total(self):
         """Atualiza o tamanho total baseado nos itens."""
-        self.tamanho_total = sum(obj.tamanho_bytes or 0 for obj in self.objetos_itens if isinstance(obj, ArquivoInfo))
+        self.tamanho_total = sum(
+            obj.tamanho_bytes or 0
+            for obj in self.objetos_itens
+            if isinstance(obj, ArquivoInfo) and isinstance(obj.tamanho_bytes, (int, type(None)))
+        )
         self.tamanho_bytes = self.tamanho_total
 
     # ========================================================================
     # MÉTODOS DE INFORMAÇÃO
     # ========================================================================
 
-    def info_completa(self) -> dict[str, Any]:
+    def info_completa(self) -> dict[str, object]:
         """Retorna informações completas da pasta."""
         info_base = self.info_detalhada.copy()
 

@@ -62,10 +62,7 @@ class CaminhoFactory:
         raise TypeError(f"Tipo de caminho não suportado: {caminho_input}")
 
     @staticmethod
-    def ler_caminho_seguro(
-        caminho_input: str | Path,
-        **kwargs
-    ) -> ArquivoInfo | PastaInfo | None:
+    def ler_caminho_seguro(caminho_input: str | Path, **kwargs) -> ArquivoInfo | PastaInfo | None:
         """
         Versão segura que não levanta exceções.
 
@@ -82,9 +79,7 @@ class CaminhoFactory:
             return None
 
     @staticmethod
-    def ler_multiplos_caminhos(
-        caminhos_lista: Sequence[str | Path], **kwargs
-    ) -> list[ArquivoInfo | PastaInfo]:
+    def ler_multiplos_caminhos(caminhos_lista: Sequence[str | Path], **kwargs) -> list[ArquivoInfo | PastaInfo]:
         """
         Cria múltiplos objetos a partir de uma sequência de caminhos.
 
@@ -354,9 +349,7 @@ class DemonstradorSistemaArquivos:
         ]
 
         for arquivo in arquivos:
-            self._print_status(
-                "✓", f"{arquivo.nome} ({formatar_tamanho(arquivo.tamanho_bytes or 0)})", 2
-            )
+            self._print_status("✓", f"{arquivo.nome} ({formatar_tamanho(arquivo.tamanho_bytes or 0)})", 2)
 
         # Criando pasta
         self._print_status("📁", "2. CRIANDO PASTA SIMULADA:")
@@ -422,27 +415,17 @@ def criar_parser() -> argparse.ArgumentParser:
         help="Tipo do caminho (auto detecta)",
     )
 
-    parser.add_argument(
-        "-r", "--recursivo", action="store_true", help="Incluir subpastas (apenas para pastas)"
-    )
+    parser.add_argument("-r", "--recursivo", action="store_true", help="Incluir subpastas (apenas para pastas)")
 
     parser.add_argument("--menu", action="store_true", help="Abrir menu interativo")
 
-    parser.add_argument(
-        "--factory", action="store_true", help="Executar apenas demonstração do factory"
-    )
+    parser.add_argument("--factory", action="store_true", help="Executar apenas demonstração do factory")
 
-    parser.add_argument(
-        "--arquivo-demo", action="store_true", help="Executar demonstração de arquivo"
-    )
+    parser.add_argument("--arquivo-demo", action="store_true", help="Executar demonstração de arquivo")
 
-    parser.add_argument(
-        "--pasta-demo", action="store_true", help="Executar demonstração de pasta real"
-    )
+    parser.add_argument("--pasta-demo", action="store_true", help="Executar demonstração de pasta real")
 
-    parser.add_argument(
-        "--simulada", action="store_true", help="Executar demonstração de pasta simulada"
-    )
+    parser.add_argument("--simulada", action="store_true", help="Executar demonstração de pasta simulada")
 
     parser.add_argument("--tudo", action="store_true", help="Executar todas as demonstrações")
 
