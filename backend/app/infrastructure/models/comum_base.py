@@ -55,7 +55,7 @@ class CaminhoBase(BaseModel):
         except (OSError, ValueError, RuntimeError):
             return str(Path(v))
 
-    def __init__(self, **data):
+    def __init__(self, **data: object) -> None:
         super().__init__(**data)
         self.carregar_propriedades()
 
@@ -68,7 +68,7 @@ class CaminhoBase(BaseModel):
         return self.tipo == "pasta"
 
     @property
-    def info_detalhada(self) -> dict[str, object]:
+    def info_detalhada(self) -> dict[str, str | int | bool | datetime | list | None]:
         """Retorna um dict com todas as informações relevantes."""
         return {
             "caminho": self.caminho,
@@ -125,7 +125,7 @@ class CaminhoBase(BaseModel):
         elif self._path_obj.is_dir():
             self.carregar_propriedades_pasta()
 
-    def carregar_estatisticas(self):
+    def carregar_estatisticas(self) -> None:
         """Carrega estatísticas básicas do arquivo"""
         if not self._path_obj:
             return
@@ -146,7 +146,7 @@ class CaminhoBase(BaseModel):
         except (OSError, PermissionError) as e:
             self._erro = f"Erro ao acessar estatísticas: {str(e)}"
 
-    def carregar_propriedades_arquivo(self):
+    def carregar_propriedades_arquivo(self) -> None:
         """Carrega propriedades específicas de arquivo"""
         if not self._path_obj or not self._stat_info:
             return
@@ -170,7 +170,7 @@ class CaminhoBase(BaseModel):
         except (OSError, PermissionError) as e:
             self._erro = f"Erro ao processar arquivo: {str(e)}"
 
-    def carregar_propriedades_pasta(self):
+    def carregar_propriedades_pasta(self) -> None:
         """Carrega propriedades específicas de pasta"""
         if not self._path_obj:
             return
@@ -221,7 +221,7 @@ class CaminhoBase(BaseModel):
                 "erro": "sem permissão",
             }
 
-    def _contar_linhas(self):
+    def _contar_linhas(self) -> None:
         """Conta o número de linhas em arquivos de texto"""
         if not self._path_obj:
             return
@@ -251,14 +251,14 @@ class CaminhoBase(BaseModel):
         except (OSError, PermissionError, ValueError):
             return False
 
-    def listar_conteudo_simples(self) -> list[dict[str, object]]:
+    def listar_conteudo_simples(self) -> list[dict[str, str | int | bool | None]]:
         """Lista o conteúdo de forma simplificada para a Classe B."""
         if not self.is_pasta or not self._path_obj:
             return []
 
         conteudo = []
         for item in self.itens:
-            item_info: dict[str, object] = {
+            item_info: dict[str, str | int | bool | None] = {
                 "nome": item.get("nome"),
                 "tipo": item.get("tipo"),
                 "oculto": item.get("oculto", False),
@@ -271,12 +271,12 @@ class CaminhoBase(BaseModel):
 
         return conteudo
 
-    def buscar_por_nome(self, nome_parcial: str) -> list[dict[str, object]]:
+    def buscar_por_nome(self, nome_parcial: str) -> list[dict[str, str | int | None]]:
         """Busca itens por nome (case insensitive)."""
         if not self.is_pasta:
             return []
 
-        resultados = []
+        resultados: list[dict[str, str | int | None]] = []
         nome_parcial_lower = nome_parcial.lower()
 
         for item in self.itens:
@@ -292,7 +292,7 @@ class CaminhoBase(BaseModel):
         return resultados
 
     # Método legado para compatibilidade
-    def info_completa(self) -> dict[str, object]:
+    def info_completa(self) -> dict[str, str | int | bool | datetime | list | None]:
         """Fornece um dicionário completo de informações,
         mantendo compatibilidade com código anterior."""
         return self.info_detalhada

@@ -6,8 +6,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from app.core.database import get_db
-from app.main import app
 from app.infrastructure.models.favorite import Base
+from app.main import app
 
 
 @pytest.fixture
@@ -16,10 +16,10 @@ def client():
     # Banco em memória para testes
     engine = create_engine("sqlite:///:memory:")
     Base.metadata.create_all(bind=engine)
-    TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    testing_session_local = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
     def override_get_db():
-        db = TestingSessionLocal()
+        db = testing_session_local()
         try:
             yield db
         finally:
