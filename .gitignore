@@ -1,3 +1,9 @@
+# ...existing code...
+# ambientes virtuais do backend
+backend/.venv/
+backend/SkyNet-Mobile/
+# ...existing code...
+
 # Backend local / artefatos (não commitar)
 backend/.venv/
 backend/.env
