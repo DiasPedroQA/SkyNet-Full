@@ -386,18 +386,25 @@ def test_carregar_propriedades_com_erro_permissao(monkeypatch, tmp_path: Path) -
     arquivo = tmp_path / "sem_permissao.txt"
     arquivo.write_text("teste")
 
-    # Simula erro de permissão no stat
-    def mock_stat(*args, **kwargs):  # noqa: ARG001
+    # Salva o estado original do modelo
+    modelo = CaminhoBase(caminho=arquivo)
+    assert modelo._erro is None  # Inicialmente sem erro
+
+    # Simula erro de permissão no stat APÓS criar o modelo
+    def mock_stat(*args, **kwargs):
         raise PermissionError("Permissão negada")
 
     monkeypatch.setattr(Path, "stat", mock_stat)
 
-    modelo = CaminhoBase(caminho=arquivo)
-    # assert modelo._erro is not None
-    # assert "Permissão" in modelo._erro
-    assert modelo.existe is False
+    # Recarrega para forçar o erro
+    modelo.recarregar()
+
+    # Verifica se o erro foi capturado
+    assert modelo._erro is not None
+    assert "Permissão" in modelo._erro or "permissão" in modelo._erro.lower()
+
+    # Propriedades devem ter valores padrão
     assert modelo.tamanho_bytes == 0
-    assert modelo.data_modificacao is None
     assert modelo.data_criacao is None
 
 

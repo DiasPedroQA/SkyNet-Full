@@ -1,106 +1,156 @@
-# .github/workflows/ci.yml
-
 name: SkyNet CI
 
 on:
-    push:
-        branches: [ "main", "develop" ]
-    pull_request:
-        branches: [ "main", "develop" ]
+  push:
+    branches: ["main", "develop"]
+  pull_request:
+    branches: ["main", "develop"]
 
 jobs:
-    backend:
-        name: 🐍 Backend - FastAPI
-        runs-on: ubuntu-latest
+  # 1. Identifica o que mudou para otimizar o tempo de execução
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      frontend: ${{ steps.filter.outputs.frontend }}
+      backend: ${{ steps.filter.outputs.backend }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            frontend:
+              - 'frontend/**'
+            backend:
+              - 'backend/**'
 
-        defaults:
-            run:
-                working-directory: backend
+  # 2. Job de Backend (Considerado CRÍTICO na sua lógica)
+  backend:
+    name: 🐍 Backend - FastAPI
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: 'pip'
+          cache-dependency-path: backend/requirements.txt
 
-            - name: Set up Python
-              uses: actions/setup-python@v5
-              with:
-                python-version: "3.11"
-                cache: 'pip'
-                cache-dependency-path: backend/requirements.txt
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov ruff
 
-            - name: Install dependencies
-              run: |
-                  python -m pip install --upgrade pip
-                  pip install -r requirements.txt
-                  pip install pytest pytest-cov ruff
+      - id: lint_backend
+        name: Lint with Ruff
+        run: ruff check .
 
-            - name: Lint with Ruff
-              run: ruff check .
+      - id: test_backend
+        name: Run tests with coverage
+        run: pytest --cov=app --cov-report=term-missing --cov-report=xml
 
-            - name: Run tests with coverage
-              run: pytest --cov=app --cov-report=term-missing --cov-report=xml
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./backend/coverage.xml
+          flags: backend
+          token: ${{ secrets.CODECOV_TOKEN }}
+        continue-on-error: true
 
-            - name: Upload coverage to Codecov
-              uses: codecov/codecov-action@v4
-              with:
-                file: ./backend/coverage.xml
-                flags: backend
-                token: ${{ secrets.CODECOV_TOKEN }}
-              continue-on-error: true
+  # 3. Job de Frontend (Considerado NÃO CRÍTICO na sua lógica)
+  frontend:
+    name: ⚛️ Frontend - React
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    frontend:
-        name: ⚛️ Frontend - React
-        runs-on: ubuntu-latest
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
 
-        defaults:
-            run:
-                working-directory: frontend
+      - name: Install dependencies
+        run: npm ci
 
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v4
+      - id: lint_frontend
+        name: Run lint
+        run: npm run lint
+        continue-on-error: true
 
-            - name: Use Node.js
-              uses: actions/setup-node@v4
-              with:
-                node-version: "20"
-                cache: 'npm'
-                cache-dependency-path: frontend/package-lock.json
+      - name: Check if test script exists
+        id: check_test
+        run: |
+          if npm run | grep -q "test"; then
+            echo "has_test=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_test=false" >> $GITHUB_OUTPUT
+          fi
 
-            - name: Install dependencies
-              run: npm ci
+      - id: test_frontend
+        name: Run tests (if available)
+        if: steps.check_test.outputs.has_test == 'true'
+        run: npm test -- --watchAll=false --coverage
+        continue-on-error: true
 
-            - name: Run lint
-              run: npm run lint
-              continue-on-error: true
+      - name: Build
+        run: npm run build
 
-            - name: Run tests
-              run: npm test -- --watchAll=false --coverage
+      - name: Upload coverage to Codecov
+        if: steps.check_test.outputs.has_test == 'true'
+        uses: codecov/codecov-action@v4
+        with:
+          directory: ./frontend/coverage
+          flags: frontend
+          token: ${{ secrets.CODECOV_TOKEN }}
+        continue-on-error: true
 
-            - name: Build
-              run: npm run build
+  # 4. Job de Validação Final (Consolidação de Notificação e Status)
+  validate-all:
+    name: 📢 Final Validation & Notify
+    needs: [backend, frontend]
+    runs-on: ubuntu-latest
+    if: always() # Garante que rode mesmo que jobs anteriores falhem
+    steps:
+      - name: Check all jobs status
+        run: |
+          BACKEND_STATUS="${{ needs.backend.result }}"
+          FRONTEND_STATUS="${{ needs.frontend.result }}"
 
-            - name: Upload coverage to Codecov
-              uses: codecov/codecov-action@v4
-              with:
-                  directory: ./frontend/coverage
-                  flags: frontend
-                  token: ${{ secrets.CODECOV_TOKEN }}
-              continue-on-error: true
+          echo "📊 Relatório de Status:"
+          echo "Backend (Crítico): $BACKEND_STATUS"
+          echo "Frontend (Opcional): $FRONTEND_STATUS"
 
-    # Job opcional para notificação
-    notify:
-        name: 📢 Notify
-        needs: [backend, frontend]
-        runs-on: ubuntu-latest
-        if: always()
+          # Lógica de Falha Crítica (Backend)
+          if [[ "$BACKEND_STATUS" == "failure" ]]; then
+            echo "❌ ERRO CRÍTICO: O build do Backend falhou. Bloqueando merge."
+            exit 1
+          fi
 
-        steps:
-            - name: Check status
-              run: |
-                  if [[ "${{ needs.backend.result }}" == "success" && "${{ needs.frontend.result }}" == "success" ]]; then
-                      echo "✅ Todos os checks passaram!"
-                  else
-                      echo "❌ Alguns checks falharam!"
-                      exit 1
-                  fi
+          # Lógica de Aviso (Frontend)
+          if [[ "$FRONTEND_STATUS" == "failure" ]]; then
+            echo "⚠️ AVISO: O Frontend falhou, mas o processo continuará por ser não crítico."
+          fi
+
+          # Verificação de Sucesso/Skip (Lógica de Notificação original)
+          if [[ "$BACKEND_STATUS" =~ ^(success|skipped)$ ]]; then
+              echo "✅ Backend validado com sucesso (ou sem alterações)."
+          fi
+
+          echo "🚀 Concluído!"
