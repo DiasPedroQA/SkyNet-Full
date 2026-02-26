@@ -1,2 +1,0 @@
-def test_comum_base_smoke():
-    assert True

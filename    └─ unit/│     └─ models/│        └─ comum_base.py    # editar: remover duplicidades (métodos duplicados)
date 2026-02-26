@@ -1,9 +1,0 @@
-class ComumBase:
-    def metodo_unico(self):
-        pass
-
-    def outro_metodo(self):
-        pass
-
-    def metodo_adicional(self):
-        pass
