@@ -121,36 +121,50 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
         continue-on-error: true
 
-  # 4. Job de Validação Final (Consolidação de Notificação e Status)
+  # 4. Job de Validação Final (Versão ainda mais robusta)
   validate-all:
-    name: 📢 Final Validation & Notify
-    needs: [backend, frontend]
-    runs-on: ubuntu-latest
-    if: always() # Garante que rode mesmo que jobs anteriores falhem
-    steps:
-      - name: Check all jobs status
-        run: |
-          BACKEND_STATUS="${{ needs.backend.result }}"
-          FRONTEND_STATUS="${{ needs.frontend.result }}"
+      name: 📢 Final Validation & Notify
+      needs: [backend, frontend]
+      runs-on: ubuntu-latest
+      if: always()
+      steps:
+        - name: Debug - Show all job statuses
+          run: |
+            echo "Backend: ${{ needs.backend.result }}"
+            echo "Frontend: ${{ needs.frontend.result }}"
 
-          echo "📊 Relatório de Status:"
-          echo "Backend (Crítico): $BACKEND_STATUS"
-          echo "Frontend (Opcional): $FRONTEND_STATUS"
+        - name: Check all jobs status
+          run: |
+            BACKEND_STATUS="${{ needs.backend.result }}"
+            FRONTEND_STATUS="${{ needs.frontend.result }}"
 
-          # Lógica de Falha Crítica (Backend)
-          if [[ "$BACKEND_STATUS" == "failure" ]]; then
-            echo "❌ ERRO CRÍTICO: O build do Backend falhou. Bloqueando merge."
-            exit 1
-          fi
+            echo "📊 Relatório de Status:"
+            echo "Backend (Crítico): $BACKEND_STATUS"
+            echo "Frontend (Opcional): $FRONTEND_STATUS"
 
-          # Lógica de Aviso (Frontend)
-          if [[ "$FRONTEND_STATUS" == "failure" ]]; then
-            echo "⚠️ AVISO: O Frontend falhou, mas o processo continuará por ser não crítico."
-          fi
+            # Se não houve mudanças em nenhum dos dois, tudo bem
+            if [[ "$BACKEND_STATUS" == "skipped" && "$FRONTEND_STATUS" == "skipped" ]]; then
+              echo "ℹ️ Nenhuma mudança detectada no backend ou frontend."
+              echo "✅ Pipeline concluída sem execuções."
+              exit 0
+            fi
 
-          # Verificação de Sucesso/Skip (Lógica de Notificação original)
-          if [[ "$BACKEND_STATUS" =~ ^(success|skipped)$ ]]; then
-              echo "✅ Backend validado com sucesso (ou sem alterações)."
-          fi
+            # Lógica de Falha Crítica (Backend)
+            if [[ "$BACKEND_STATUS" == "failure" ]]; then
+              echo "❌ ERRO CRÍTICO: O build do Backend falhou. Bloqueando merge."
+              exit 1
+            fi
 
-          echo "🚀 Concluído!"
+            # Lógica de Aviso (Frontend)
+            if [[ "$FRONTEND_STATUS" == "failure" ]]; then
+              echo "⚠️ AVISO: O Frontend falhou, mas o processo continuará por ser não crítico."
+            elif [[ "$FRONTEND_STATUS" == "skipped" ]]; then
+              echo "ℹ️ Frontend não foi executado (sem mudanças detectadas)."
+            fi
+
+            # Verificação de Sucesso
+            if [[ "$BACKEND_STATUS" == "success" ]]; then
+                echo "✅ Backend validado com sucesso."
+            fi
+
+            echo "🚀 Pipeline concluída com sucesso!"
