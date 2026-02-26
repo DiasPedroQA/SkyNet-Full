@@ -1,4 +1,4 @@
-# pylint: disable=too-many-instance-attributes, wrong-import-order, import-error, line-too-long
+# pylint: disable=too-many-instance-attributes, line-too-long
 
 """Modelos base para o sistema de arquivos com auto-detecção"""
 
@@ -15,13 +15,17 @@ from app.infrastructure.services.formatadores import is_oculto, obter_extensao
 
 
 class CaminhoBase(BaseModel):
-    """Classe base que auto-detecta e carrega propriedades de arquivos/pastas."""
+    """
+    Classe base que representa um caminho no sistema de arquivos.
+    Trata de forma neutra, sem assumir se é arquivo ou pasta.
+    """
 
-    caminho: str
+    caminho: str = Field(..., description="Caminho absoluto do arquivo ou pasta")
     nome: str | None = Field(None, description="Nome do arquivo/pasta")
     tipo: str | None = Field(None, description="'arquivo' ou 'pasta'")
     existe: bool = Field(False, description="Se o caminho existe no sistema")
 
+    # Propriedades comuns
     tamanho_bytes: int | None = Field(None, description="Tamanho em bytes")
     data_criacao: datetime | None = Field(None, description="Data de criação")
     data_modificacao: datetime | None = Field(None, description="Data da última modificação")
@@ -33,43 +37,47 @@ class CaminhoBase(BaseModel):
     extensao: str | None = Field(None, description="Extensão do arquivo")
     mime_type: str | None = Field(None, description="Tipo MIME do arquivo")
 
+    # Propriedades específicas
     linhas: int | None = Field(None, description="Número de linhas (arquivos de texto)")
-    itens: list[dict[str, str | int | bool]] = Field(default_factory=list, description="Lista de itens da pasta")
+    itens: list = Field(default_factory=list, description="Lista de itens da pasta")
     quantidade_itens: int | None = Field(None, description="Quantidade de itens na pasta")
     tamanho_total: int | None = Field(None, description="Tamanho total da pasta (soma dos arquivos)")
 
     _erro: str | None = PrivateAttr(default=None)
-    _path_obj: Path | None = PrivateAttr(default=None)
-    _stat_info: Any = PrivateAttr(default=None)
+    _objeto_caminho: Path | None = PrivateAttr(default=None)
+    _info_estatisticas = PrivateAttr(default=None)
 
     @field_validator("caminho", mode="before")
     @classmethod
-    def validar_caminho(cls, v: str | Path) -> str:
-        """Aceita Path ou str e normaliza para string absoluta (não strict)."""
+    def _validar_caminho(cls, v: str | Path) -> str:
+        """Aceita Path ou str e normaliza para string absoluta."""
         if isinstance(v, Path):
             v = str(v)
-        if v is None or (isinstance(v, str) and not v.strip()):
+        if not v or not str(v).strip():
             raise ValueError("Caminho não pode ser vazio")
         try:
             return str(Path(v).expanduser().resolve(strict=False))
         except (OSError, ValueError, RuntimeError):
             return str(Path(v))
 
-    def __init__(self, **data: object) -> None:
+    def __init__(self, **data: Any) -> None:
         super().__init__(**data)
-        self.carregar_propriedades()
+        self._carregar_caminho()
 
-    # ---------------------------
-    # Propriedades auxiliares
-    # ---------------------------
+    # =========================================================================
+    # PROPRIEDADES
+    # =========================================================================
+
     @property
     def is_pasta(self) -> bool:
-        """Facilita verificação se é pasta."""
+        """Verifica se o caminho é uma pasta."""
         return self.tipo == "pasta"
 
     @property
-    def info_detalhada(self) -> dict[str, str | int | bool | datetime | list | None]:
-        """Retorna um dict com todas as informações relevantes."""
+    def info_detalhada(
+        self,
+    ) -> dict[str, str | bool | int | datetime | list[dict[str, str | int | bool | None]] | None]:
+        """Retorna dict com todas as informações relevantes."""
         return {
             "caminho": self.caminho,
             "nome": self.nome,
@@ -92,116 +100,162 @@ class CaminhoBase(BaseModel):
             "erro": self._erro,
         }
 
-    # ---------------------------
-    # API pública
-    # ---------------------------
-    def carregar_propriedades(self) -> None:
-        """Carrega todas as propriedades do sistema de arquivos"""
-        self._path_obj = Path(self.caminho)
-        self._erro = None
+    # =========================================================================
+    # MÉTODOS PRINCIPAIS
+    # =========================================================================
 
-        # Verifica existência
-        self.existe = self._path_obj.exists()
+    def _carregar_caminho(self) -> None:
+        """Carrega todas as propriedades do caminho."""
+        self._objeto_caminho = Path(self.caminho)
+        self._erro = None
+        self.existe = self._objeto_caminho.exists()
+
         if not self.existe:
-            self._erro = f"Caminho não existe: {self.caminho}"
-            # Mantém alguns valores previsíveis para código anterior
-            self.tipo = None
-            self.tamanho_bytes = 0
-            self.data_criacao = None
-            self.data_modificacao = None
+            self._definir_valores_padrao()
             return
 
-        # Propriedades básicas
-        self.nome = self._path_obj.name
-        self.pai = str(self._path_obj.parent)
-        self.oculto = is_oculto(self._path_obj.name)
+        self._carregar_propriedades_basicas()
+        self._carregar_estatisticas()
+        self._carregar_propriedades_especificas()
 
-        # Carrega estatísticas
-        self.carregar_estatisticas()
+    def _definir_valores_padrao(self) -> None:
+        """Define valores padrão para caminho inexistente."""
+        self.tipo = None
+        self.tamanho_bytes = 0
+        self.data_criacao = None
+        self.data_modificacao = None
+        self.data_acesso = None
+        self._erro = f"Caminho não existe: {self.caminho}"
 
-        # Detecta tipo e carrega propriedades específicas
-        if self._path_obj.is_file():
-            self.carregar_propriedades_arquivo()
-        elif self._path_obj.is_dir():
-            self.carregar_propriedades_pasta()
+    def _carregar_propriedades_basicas(self) -> None:
+        """Carrega propriedades básicas do caminho."""
+        if not self._objeto_caminho:
+            return
+        self.nome = self._objeto_caminho.name
+        self.pai = str(self._objeto_caminho.parent)
+        self.oculto = is_oculto(self._objeto_caminho.name)
 
-    def carregar_estatisticas(self) -> None:
-        """Carrega estatísticas básicas do arquivo"""
-        if not self._path_obj:
+    def _carregar_propriedades_especificas(self) -> None:
+        """Delega para método específico baseado no tipo."""
+        if not self._objeto_caminho:
+            return
+
+        if self._objeto_caminho.is_file():
+            self._carregar_como_arquivo()
+        elif self._objeto_caminho.is_dir():
+            self._carregar_como_pasta()
+
+    # =========================================================================
+    # ESTATÍSTICAS
+    # =========================================================================
+
+    def _carregar_estatisticas(self) -> None:
+        """Carrega estatísticas básicas do caminho."""
+        if not self._objeto_caminho:
             return
 
         try:
-            self._stat_info = self._path_obj.stat()
-            self.data_criacao = datetime.fromtimestamp(self._stat_info.st_ctime)
-            self.data_modificacao = datetime.fromtimestamp(self._stat_info.st_mtime)
-            self.data_acesso = datetime.fromtimestamp(self._stat_info.st_atime)
-            self.permissoes = oct(self._stat_info.st_mode)[-3:]
-
-            # Dono do arquivo
-            try:
-                self.dono = pwd.getpwuid(self._stat_info.st_uid).pw_name
-            except (KeyError, ImportError, OSError):
-                self.dono = str(self._stat_info.st_uid)
+            self._info_estatisticas = self._objeto_caminho.stat()
+            self.data_criacao = datetime.fromtimestamp(self._info_estatisticas.st_ctime)
+            self.data_modificacao = datetime.fromtimestamp(self._info_estatisticas.st_mtime)
+            self.data_acesso = datetime.fromtimestamp(self._info_estatisticas.st_atime)
+            self.permissoes = oct(self._info_estatisticas.st_mode)[-3:]
+            self._carregar_dono()
 
         except (OSError, PermissionError) as e:
             self._erro = f"Erro ao acessar estatísticas: {str(e)}"
 
-    def carregar_propriedades_arquivo(self) -> None:
-        """Carrega propriedades específicas de arquivo"""
-        if not self._path_obj or not self._stat_info:
+    def _carregar_dono(self) -> None:
+        """Carrega informação do dono do arquivo."""
+        if not self._info_estatisticas:
             return
+        try:
+            self.dono = pwd.getpwuid(self._info_estatisticas.st_uid).pw_name
+        except (KeyError, ImportError, OSError):
+            self.dono = str(self._info_estatisticas.st_uid)
 
+    # =========================================================================
+    # CARREGAMENTO POR TIPO
+    # =========================================================================
+
+    def _carregar_como_arquivo(self) -> None:
+        """Carrega propriedades específicas de arquivo."""
         self.tipo = "arquivo"
 
+        if not self._info_estatisticas:
+            return
+
         try:
-            self.tamanho_bytes = self._stat_info.st_size
-
-            # Extensão
-            self.extensao = obter_extensao(caminho=self._path_obj)
-
-            # MIME type
-            mime_type, _ = mimetypes.guess_type(str(self._path_obj))
-            self.mime_type = mime_type or "application/octet-stream"
-
-            # Conta linhas se for arquivo de texto
-            if self.mime_type and self.mime_type.startswith("text/"):
-                self._contar_linhas()
+            self.tamanho_bytes = self._info_estatisticas.st_size
+            if self._objeto_caminho is not None:
+                self.extensao = obter_extensao(caminho=self._objeto_caminho)
+                self._carregar_mime_type()
+                self._tentar_contar_linhas()
 
         except (OSError, PermissionError) as e:
             self._erro = f"Erro ao processar arquivo: {str(e)}"
 
-    def carregar_propriedades_pasta(self) -> None:
-        """Carrega propriedades específicas de pasta"""
-        if not self._path_obj:
-            return
-
+    def _carregar_como_pasta(self) -> None:
+        """Carrega propriedades específicas de pasta."""
         self.tipo = "pasta"
         self.tamanho_bytes = 0
         self.itens = []
         self.tamanho_total = 0
 
-        try:
-            for item_path in self._path_obj.iterdir():
-                item_info = self._get_item_info(item_path)
-                self.itens.append(item_info)
+        if self._objeto_caminho is None:
+            return
 
-                if item_path.is_file():
-                    with contextlib.suppress(OSError, PermissionError):
-                        self.tamanho_total += item_path.stat().st_size
+        try:
+            for item_path in self._objeto_caminho.iterdir():
+                item_info = self._criar_info_item(item_path)
+                self.itens.append(item_info)
+                self._acumular_tamanho_item(item_path)
 
             self.quantidade_itens = len(self.itens)
-            self.tamanho_bytes = self.tamanho_total
+            if self.tamanho_total is not None:
+                self.tamanho_bytes = self.tamanho_total
 
         except PermissionError:
-            self._erro = f"Sem permissão para listar conteúdo de: {self.caminho}"
+            self._erro = f"Sem permissão para listar: {self.caminho}"
         except OSError as e:
             self._erro = f"Erro ao acessar pasta: {str(e)}"
 
-    def _get_item_info(self, item_path: Path) -> dict[str, str | int | bool]:
-        """Obtém informações básicas de um item da pasta"""
+    # =========================================================================
+    # MÉTODOS AUXILIARES
+    # =========================================================================
+
+    def _carregar_mime_type(self) -> None:
+        """Carrega o tipo MIME do arquivo."""
+        if not self._objeto_caminho:
+            return
+        mime_type, _ = mimetypes.guess_type(str(self._objeto_caminho))
+        self.mime_type = mime_type or "application/octet-stream"
+
+    def _tentar_contar_linhas(self) -> None:
+        """Tenta contar linhas se for arquivo de texto."""
+        if self.mime_type and self.mime_type.startswith("text/") and self._objeto_caminho is not None:
+            self._contar_linhas()
+
+    def _contar_linhas(self) -> None:
+        """Conta o número de linhas em arquivos de texto."""
+        if self._objeto_caminho is None:
+            return
+
+        encodings = ["utf-8", "latin-1", "cp1252"]
+
+        for encoding in encodings:
+            try:
+                with open(str(self._objeto_caminho), "r", encoding=encoding) as f:
+                    self.linhas = sum(1 for _ in f)
+                break
+            except (UnicodeDecodeError, IOError, PermissionError):
+                continue
+
+    def _criar_info_item(self, item_path: Path) -> dict:
+        """Cria dicionário com informações de um item."""
         try:
             stat_info = item_path.stat()
-            info: dict[str, str | int | bool] = {
+            info: dict = {
                 "nome": item_path.name,
                 "tipo": "pasta" if item_path.is_dir() else "arquivo",
                 "modificado": datetime.fromtimestamp(stat_info.st_mtime).isoformat(),
@@ -221,78 +275,20 @@ class CaminhoBase(BaseModel):
                 "erro": "sem permissão",
             }
 
-    def _contar_linhas(self) -> None:
-        """Conta o número de linhas em arquivos de texto"""
-        if not self._path_obj:
-            return
+    def _acumular_tamanho_item(self, item_path: Path) -> None:
+        """Acumula tamanho do item ao total da pasta."""
+        if item_path.is_file():
+            with contextlib.suppress(OSError, PermissionError):
+                tamanho = item_path.stat().st_size
+                if self.tamanho_total is None:
+                    self.tamanho_total = tamanho
+                else:
+                    self.tamanho_total += tamanho
 
-        encodings = ["utf-8", "latin-1", "cp1252"]
+    # =========================================================================
+    # MÉTODO LEGADO
+    # =========================================================================
 
-        for encoding in encodings:
-            try:
-                with open(str(self._path_obj), "r", encoding=encoding) as f:
-                    self.linhas = sum(1 for _ in f)
-                break
-            except (UnicodeDecodeError, IOError, PermissionError):
-                continue
-
-    def recarregar(self) -> None:
-        """Recarrega as propriedades do caminho atual."""
-        self.carregar_propriedades()
-
-    def mudar_caminho(self, novo_caminho: str) -> bool:
-        """
-        Muda para um novo caminho e recarrega propriedades.
-        """
-        try:
-            self.caminho = novo_caminho
-            self.carregar_propriedades()
-            return self.existe
-        except (OSError, PermissionError, ValueError):
-            return False
-
-    def listar_conteudo_simples(self) -> list[dict[str, str | int | bool | None]]:
-        """Lista o conteúdo de forma simplificada para a Classe B."""
-        if not self.is_pasta or not self._path_obj:
-            return []
-
-        conteudo = []
-        for item in self.itens:
-            item_info: dict[str, str | int | bool | None] = {
-                "nome": item.get("nome"),
-                "tipo": item.get("tipo"),
-                "oculto": item.get("oculto", False),
-            }
-
-            if item.get("tipo") == "arquivo":
-                item_info["tamanho"] = item.get("tamanho")
-
-            conteudo.append(item_info)
-
-        return conteudo
-
-    def buscar_por_nome(self, nome_parcial: str) -> list[dict[str, str | int | None]]:
-        """Busca itens por nome (case insensitive)."""
-        if not self.is_pasta:
-            return []
-
-        resultados: list[dict[str, str | int | None]] = []
-        nome_parcial_lower = nome_parcial.lower()
-
-        for item in self.itens:
-            nome_item = item.get("nome", "")
-            if isinstance(nome_item, str) and nome_parcial_lower in nome_item.lower():
-                caminho_base = self._path_obj or Path(self.caminho)
-                resultados.append({
-                    "nome": nome_item,
-                    "tipo": item.get("tipo"),
-                    "caminho_completo": str(caminho_base / nome_item),
-                })
-
-        return resultados
-
-    # Método legado para compatibilidade
-    def info_completa(self) -> dict[str, str | int | bool | datetime | list | None]:
-        """Fornece um dicionário completo de informações,
-        mantendo compatibilidade com código anterior."""
+    def info_completa(self) -> dict[str, str | bool | int | datetime | list[dict[str, str | int | bool | None]] | None]:
+        """Fornece dicionário completo (compatibilidade com código anterior)."""
         return self.info_detalhada
