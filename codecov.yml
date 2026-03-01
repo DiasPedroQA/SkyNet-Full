@@ -20,4 +20,4 @@ comment:
   require_head: true
 
 ignore:
-  - "tests/*"
+  - "backend/tests/*"

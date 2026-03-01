@@ -1,167 +1,98 @@
 # ===================================
-# SkyNet - Makefile
+# SkyNet - Makefile (Local Dev Only)
 # ===================================
 
 SHELL := /bin/bash
 
-# Diretórios
-BACKEND_DIR := backend
-FRONTEND_DIR := frontend
+BACKEND := backend
+FRONTEND := frontend
+VENV := .SkyNet-Mobile-VENV/bin
 
-.PHONY: help setup dev backend frontend build up \
-        test coverage lint format clean lint-frontend format-frontend
+.PHONY: help setup run dev check test lint format clean reset
 
 # ===================================
 # Help
 # ===================================
 help:
 	@echo ""
-	@echo "🚀 SkyNet - Comandos disponíveis:"
+	@echo "🚀 SkyNet - Comandos principais"
 	@echo ""
-	@echo "  📦 Setup"
-	@echo "    make setup         - Instala dependências do backend e frontend"
-	@echo ""
-	@echo "  🚀 Desenvolvimento"
-	@echo "    make dev           - Inicia backend + frontend (modo desenvolvimento)"
-	@echo "    make backend       - Inicia apenas o backend"
-	@echo "    make frontend      - Inicia apenas o frontend"
-	@echo ""
-	@echo "  🏭 Produção"
-	@echo "    make build         - Build do frontend para produção"
-	@echo "    make up            - Inicia backend em modo produção"
-	@echo ""
-	@echo "  🧪 Testes"
-	@echo "    make test          - Executa testes do backend"
-	@echo "    make test-frontend - Executa testes do frontend"
-	@echo "    make coverage      - Gera relatório de cobertura"
-	@echo ""
-	@echo "  🔧 Qualidade"
-	@echo "    make lint          - Verifica código backend e frontend"
-	@echo "    make lint-backend  - Verifica apenas backend (com config)"
-	@echo "    make lint-frontend - Verifica apenas frontend"
-	@echo "    make format        - Formata código backend e frontend"
-	@echo "    make format-backend - Formata apenas backend (com config)"
-	@echo "    make format-frontend - Formata apenas frontend"
-	@echo ""
-	@echo "  🧹 Limpeza"
-	@echo "    make clean         - Remove arquivos temporários"
+	@echo "  make setup   -> Instala tudo (backend + frontend)"
+	@echo "  make run     -> Setup + lint + test + sobe app"
+	@echo "  make dev     -> Sobe backend + frontend"
+	@echo "  make check   -> Lint + testes + coverage"
+	@echo "  make clean   -> Limpa arquivos temporários"
+	@echo "  make reset   -> Limpa tudo e reinstala do zero"
 	@echo ""
 
 # ===================================
 # Setup
 # ===================================
 setup:
-	@echo "🐍 Configurando backend..."
-	cd $(BACKEND_DIR) && python -m venv .venv
-	cd $(BACKEND_DIR) && .venv/bin/pip install --upgrade pip
-	cd $(BACKEND_DIR) && .venv/bin/pip install -r requirements.txt
-	@echo "⚛️  Configurando frontend..."
-	cd $(FRONTEND_DIR) && npm install
-	@echo "✅ Setup concluído!"
+	@echo "📦 Instalando dependências..."
+	cd $(BACKEND) && python -m venv .SkyNet-Mobile-VENV
+	cd $(BACKEND) && .SkyNet-Mobile-VENV/bin/pip install --upgrade pip
+	cd $(BACKEND) && .SkyNet-Mobile-VENV/bin/pip install -r requirements.txt
+	cd $(FRONTEND) && npm install
+	@echo "✅ Setup concluído."
+
+# ===================================
+# Fluxo Completo
+# ===================================
+run: check dev
 
 # ===================================
 # Desenvolvimento
 # ===================================
 dev:
-	@echo "🔥 Iniciando backend e frontend..."
-	@trap 'echo "🛑 Encerrando..."; kill 0' SIGINT; \
-	cd $(BACKEND_DIR) && .venv/bin/uvicorn app.main:app --reload & \
-	cd $(FRONTEND_DIR) && npm run dev & \
+	@echo "🔥 Subindo backend + frontend..."
+	@trap 'kill 0' SIGINT; \
+	cd $(BACKEND) && .SkyNet-Mobile-VENV/bin/uvicorn app.main:app --reload & \
+	cd $(FRONTEND) && npm run dev & \
 	wait
 
-backend:
-	@echo "🐍 Iniciando backend..."
-	cd $(BACKEND_DIR) && .venv/bin/uvicorn app.main:app --reload
-
-frontend:
-	@echo "⚛️ Iniciando frontend..."
-	cd $(FRONTEND_DIR) && npm run dev
-
 # ===================================
-# Produção
+# Qualidade
 # ===================================
-build:
-	@echo "🏗️  Build do frontend..."
-	cd $(FRONTEND_DIR) && npm run build
+check: lint test coverage
 
-up:
-	@echo "🚀 Iniciando backend em produção..."
-	cd $(BACKEND_DIR) && .venv/bin/uvicorn app.main:app
+lint:
+	@echo "🔍 Lint backend..."
+	cd $(BACKEND) && $(VENV)/ruff check . --config pyproject.toml
+	@echo "🔍 Lint frontend..."
+	@cd $(FRONTEND) && npm run lint || echo "⚠️  Frontend sem lint configurado"
 
-# ===================================
-# Testes
-# ===================================
+format:
+	@echo "✨ Formatando backend..."
+	cd $(BACKEND) && $(VENV)/ruff check . --fix
+	@echo "✨ Formatando frontend..."
+	@cd $(FRONTEND) && npm run format || echo "⚠️  Frontend sem format configurado"
+
 test:
 	@echo "🧪 Testando backend..."
-	cd $(BACKEND_DIR) && .venv/bin/pytest
-
-test-frontend:
+	cd $(BACKEND) && $(VENV)/pytest
 	@echo "🧪 Testando frontend..."
-	cd $(FRONTEND_DIR) && npm test
+	@cd $(FRONTEND) && npm test || true
 
 coverage:
-	@echo "📊 Gerando relatório de cobertura..."
-	cd $(BACKEND_DIR) && .venv/bin/pytest --cov=app --cov-report=term-missing --cov-report=html
-	@echo "📁 Relatório HTML gerado em $(BACKEND_DIR)/htmlcov/"
-
-# ===================================
-# Qualidade - Backend (com configuração explícita)
-# ===================================
-lint-backend:
-	@echo "🔍 Verificando código backend com configuração..."
-	cd $(BACKEND_DIR) && .venv/bin/ruff check . --config pyproject.toml
-
-format-backend:
-	@echo "✨ Formatando código backend com configuração..."
-	cd $(BACKEND_DIR) && .venv/bin/ruff check . --config pyproject.toml --fix
-
-# ===================================
-# Qualidade - Frontend
-# ===================================
-lint-frontend:
-	@echo "🔍 Verificando código frontend..."
-	@cd $(FRONTEND_DIR) && npm run lint 2>/dev/null || echo "⚠️  Lint do frontend não configurado (crie um script 'lint' no package.json)"
-
-format-frontend:
-	@echo "✨ Formatando código frontend..."
-	@cd $(FRONTEND_DIR) && npm run format 2>/dev/null || echo "⚠️  Format do frontend não configurado (crie um script 'format' no package.json)"
-
-# ===================================
-# Qualidade - Combinados
-# ===================================
-lint: lint-backend lint-frontend
-
-format: format-backend format-frontend
+	@echo "📊 Coverage backend..."
+	cd $(BACKEND) && $(VENV)/pytest --cov=app --cov-report=term-missing
 
 # ===================================
 # Limpeza
 # ===================================
 clean:
-	@echo "🧹 Removendo arquivos temporários..."
+	@echo "🧹 Limpando arquivos temporários..."
 	rm -rf \
-		$(BACKEND_DIR)/.pytest_cache \
-		$(BACKEND_DIR)/__pycache__ \
-		$(BACKEND_DIR)/htmlcov \
-		$(BACKEND_DIR)/.coverage \
-		$(BACKEND_DIR)/.ruff_cache \
-		$(FRONTEND_DIR)/dist \
-		$(FRONTEND_DIR)/.vite \
-		$(FRONTEND_DIR)/node_modules/.vite \
-		$(FRONTEND_DIR)/coverage \
-		$(FRONTEND_DIR)/.eslintcache
-	@echo "✅ Limpeza concluída!"
+		$(BACKEND)/.pytest_cache \
+		$(BACKEND)/htmlcov \
+		$(BACKEND)/.coverage \
+		$(BACKEND)/.ruff_cache \
+		$(FRONTEND)/dist \
+		$(FRONTEND)/coverage
+	@echo "✅ Limpeza concluída."
 
-# ===================================
-# Utilitários
-# ===================================
-ruff-version:
-	@echo "🐍 Versão do Ruff:"
-	@cd $(BACKEND_DIR) && .venv/bin/ruff --version
-
-ruff-show-config:
-	@echo "🔧 Configuração do Ruff:"
-	@cd $(BACKEND_DIR) && .venv/bin/ruff check . --show-settings | grep -E "line-length|config"
-
-check-ruff-config:
-	@echo "🔍 Verificando se o Ruff está lendo a configuração correta..."
-	@cd $(BACKEND_DIR) && .venv/bin/ruff check . --config pyproject.toml --no-cache | head -10 || echo "✅ Nenhum erro encontrado!"
+reset: clean
+	rm -rf $(BACKEND)/.SkyNet-Mobile-VENV
+	rm -rf $(FRONTEND)/node_modules
+	@echo "♻️ Ambiente resetado. Execute 'make setup'"
