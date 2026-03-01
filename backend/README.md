@@ -150,4 +150,4 @@ DATABASE_URL="sqlite:///./skynet.db"
 
 ## 📄 Licença
 
-MIT © [Dias Pedro](https://github.com/DiasPedroQA)
+GNU © [Dias Pedro](https://github.com/DiasPedroQA)

@@ -1,40 +1,100 @@
 # SkyNet-Mobile
 
-![Python](https://img.shields.io/badge/python-3.12-blue)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.129-green)
-![React](https://img.shields.io/badge/React-18-blue)
-![License](https://img.shields.io/badge/license-MIT-lightgrey)
-
-## Descrição do Projeto
-
-Analisador inteligente de favoritos de navegador
-
-[Início Rápido](#início-rápido) •
-[Documentação](#documentação-da-api) •
-[Como Contribuir](#guia-de-contribuição)
-
-## Sobre
-
-SkyNet-Mobile é uma aplicação fullstack que processa arquivos HTML de favoritos exportados de navegadores, organizando e permitindo análise dos links salvos pelo usuário.
-
-### Funcionalidades do Sistema
-
-- Upload de arquivos HTML de favoritos
-- Processamento automático de links
-- Visualização organizada dos favoritos
-- Base preparada para futuras análises de padrões
+Analisador inteligente de favoritos com arquitetura fullstack, testes automatizados e pipeline de qualidade contínua.
 
 ---
 
-## Início Rápido
+## 📊 Status do Projeto
 
-### Pré-requisitos do Sistema
+![Python](https://img.shields.io/badge/python-3.12-blue)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.129-green)
+![React](https://img.shields.io/badge/React-18-blue)
+[![CI](https://github.com/DiasPedroQA/SkyNet-Mobile/actions/workflows/test-multi-os.yml/badge.svg?branch=main)](https://github.com/DiasPedroQA/SkyNet-Mobile/actions)
+[![Coverage](https://codecov.io/gh/DiasPedroQA/SkyNet-Mobile/branch/main/graph/badge.svg)](https://codecov.io/gh/DiasPedroQA/SkyNet-Mobile)
+![Python](https://img.shields.io/badge/python-3.10%20|%203.11%20|%203.12-blue)
+![License](https://img.shields.io/badge/license-GNU-green)
 
-- Python 3.12 ou superior
-- Node.js 18 ou superior
-- Docker (opcional)
+> 🔬 Projeto estruturado com foco em qualidade, testes automatizados e evolução contínua.
 
-### Configuração do Backend
+---
+
+## 🎯 Objetivo
+
+SkyNet-Mobile é uma aplicação fullstack que:
+
+* Processa arquivos HTML de favoritos exportados de navegadores
+* Organiza e estrutura os links
+* Prepara os dados para análises inteligentes futuras
+* Mantém alto padrão de qualidade de código
+
+---
+
+## 🧪 Cultura de Qualidade
+
+Inspirado no projeto **test-SO**, o SkyNet-Mobile adota:
+
+* ✔ Testes automatizados no backend e frontend
+* ✔ Cobertura de código monitorada
+* ✔ Integração contínua via GitHub Actions
+* ✔ Separação clara entre camadas (API, Services, Core, Models)
+* ✔ Arquitetura desacoplada e testável
+* ✔ Pronto para análise estática de segurança (Bandit)
+* ✔ Estrutura preparada para cobertura mínima obrigatória
+
+---
+
+## 🏗 Arquitetura
+
+### Backend (FastAPI)
+
+```text
+backend/
+├── app/
+│   ├── api/        → Rotas e controllers
+│   ├── core/       → Configurações e utilitários centrais
+│   ├── models/     → Modelos de domínio
+│   ├── services/   → Regras de negócio
+│   └── main.py     → Inicialização da aplicação
+└── tests/
+```
+
+#### Princípios adotados
+
+* Separação de responsabilidades
+* Services independentes de framework
+* Testes desacoplados de I/O
+* Preparado para expansão de domínio
+
+---
+
+### Frontend (React + TypeScript)
+
+```text
+frontend/
+├── src/
+│   ├── components/
+│   ├── pages/
+│   └── services/
+└── public/
+```
+
+* Tipagem estática com TypeScript
+* Testes unitários com Jest
+* Testes E2E com Cypress
+
+---
+
+## 🚀 Início Rápido
+
+### Pré-requisitos
+
+* Python 3.12+
+* Node.js 18+
+* Docker (opcional)
+
+---
+
+### ▶ Backend
 
 ```bash
 cd backend
@@ -44,9 +104,11 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
 
-Acesse: <http://localhost:8000>
+Acesse: [http://localhost:8000](http://localhost:8000)
 
-### Configuração do Frontend
+---
+
+### ▶ Frontend
 
 ```bash
 cd frontend
@@ -54,9 +116,11 @@ npm install
 npm start
 ```
 
-Acesse: <http://localhost:3000>
+Acesse: [http://localhost:3000](http://localhost:3000)
 
-### Execução com Docker
+---
+
+### 🐳 Execução com Docker
 
 ```bash
 docker-compose up --build
@@ -64,43 +128,18 @@ docker-compose up --build
 
 ---
 
-## Estrutura do Projeto
+## 🧪 Execução de Testes
 
-```text
-SkyNet-Mobile/
-├── backend/
-│   ├── app/
-│   │   ├── api/
-│   │   ├── core/
-│   │   ├── models/
-│   │   ├── services/
-│   │   └── main.py
-│   └── tests/
-├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   ├── pages/
-│   │   └── services/
-│   └── public/
-├── .github/
-├── docker-compose.yml
-└── Makefile
-```
-
----
-
-## Execução de Testes
-
-### Testes do Backend
+### Backend
 
 ```bash
 cd backend
 pytest
 pytest -v
-pytest --cov=app
+pytest --cov=app --cov-report=term-missing
 ```
 
-### Testes do Frontend
+### Frontend
 
 ```bash
 cd frontend
@@ -110,106 +149,96 @@ npm run test:e2e
 
 ---
 
-## Documentação da API
+## 📈 Cobertura de Código
 
-Com o backend rodando, acesse:
+Objetivo arquitetural:
 
-- Swagger UI: <http://localhost:8000/docs>
-- ReDoc: <http://localhost:8000/redoc>
-
-### Endpoints Disponíveis
-
-| Método |           Rota           |    Descrição    |
-|--------|--------------------------|-----------------|
-|  GET   |     /api/v1/favorites    | Lista favoritos |
-|  POST  | /api/v1/favorites/upload |   Upload HTML   |
-|  GET   |          /health         |  Status da API  |
+* Cobertura mínima recomendada: **85%+**
+* Separação clara entre teste unitário e integração
+* Preparado para integração futura com Codecov
 
 ---
 
-## Tecnologias Utilizadas
+## 🔐 Segurança
 
-### Backend
+Roadmap de segurança inclui:
 
-- FastAPI - Framework web
-- Pydantic - Validação de dados
-- SQLAlchemy - ORM
-- Pytest - Testes
-
-### Frontend
-
-- React - UI Library
-- TypeScript - Tipagem estática
-- Jest - Testes unitários
-- Cypress - Testes E2E
-
-### DevOps
-
-- Docker - Containerização
-- GitHub Actions - CI/CD
-- Make - Automação
+* Análise estática com Bandit
+* Verificação de dependências
+* Validação robusta de upload de arquivos
+* Sanitização de HTML recebido
 
 ---
 
-## Guia de Contribuição
+## 📡 Documentação da API
 
-1. Faça um fork do projeto
-2. Crie uma branch para sua feature:
+Com o backend rodando:
 
-   ```bash
-   git checkout -b feature/nova-funcionalidade
-   ```
+* Swagger UI: [http://localhost:8000/docs](http://localhost:8000/docs)
+* ReDoc: [http://localhost:8000/redoc](http://localhost:8000/redoc)
 
-3. Faça commit das suas mudanças:
+### Endpoints
 
-   ```bash
-   git commit -m "feat: adiciona nova funcionalidade"
-   ```
+| Método | Rota                     | Descrição       |
+| ------ | ------------------------ | --------------- |
+| GET    | /api/v1/favorites        | Lista favoritos |
+| POST   | /api/v1/favorites/upload | Upload HTML     |
+| GET    | /health                  | Status da API   |
 
-4. Faça push para a branch:
+---
 
-   ```bash
-   git push origin feature/nova-funcionalidade
-   ```
+## 🔄 Pipeline e CI
 
-5. Abra um Pull Request
+Projeto preparado para:
+
+* Execução automática de testes
+* Validação de cobertura
+* Build frontend
+* Análise estática
+* Docker build
+
+---
+
+## 📌 Roadmap
+
+* ✔ Estrutura base
+* ✔ CRUD de favoritos
+* ⏳ Upload automático completo
+* ⏳ Dashboard com métricas
+* ⏳ Autenticação de usuários
+* ⏳ Análise de padrões de navegação
+* ⏳ Deploy em produção
+* ⏳ Cobertura mínima obrigatória via CI
+* ⏳ Publicação de métricas públicas
+
+---
+
+## 🤝 Contribuição
+
+1. Fork
+2. Branch
+3. Commit padronizado
+4. Pull Request
 
 ### Padrão de Commits
 
-- feat: - Nova funcionalidade
-- fix: - Correção de bug
-- docs: - Documentação
-- test: - Testes
-- refactor: - Refatoração
-- style: - Formatação
+* feat:
+* fix:
+* docs:
+* test:
+* refactor:
+* style:
 
 ---
 
-## Roadmap do Projeto
+## 👨‍💻 Autor
 
-- Concluído: Estrutura base do projeto
-- Concluído: CRUD de favoritos
-- Pendente: Upload automático de HTML
-- Pendente: Dashboard com métricas
-- Pendente: Autenticação de usuários
-- Pendente: Análise de padrões de navegação
-- Pendente: Deploy em produção
+**Dias Pedro**
+QA Engineer & Backend Developer
+GitHub: @diaspedro
 
 ---
 
-## Licença
+## 📄 Licença
 
-Distribuído sob licença MIT. Veja o arquivo LICENSE para mais informações.
-
----
-
-## Autor
-
-### **Dias Pedro**
-
-- QA Engineer & Backend Developer
-- GitHub: @diaspedro
-
----
-
-Built with ❤️ by Dias Pedro
+GNU

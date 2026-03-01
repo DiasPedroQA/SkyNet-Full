@@ -1,0 +1,166 @@
+name: SkyNet CI - Lint, Tests, Security & Build
+
+on:
+  push:
+    branches: ["main", "develop"]
+  pull_request:
+    branches: ["main", "develop"]
+  workflow_dispatch:
+
+jobs:
+
+  # ---------------------------------
+  # 1️⃣ Detect Changes
+  # ---------------------------------
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      frontend: ${{ steps.filter.outputs.frontend }}
+      backend: ${{ steps.filter.outputs.backend }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            frontend:
+              - 'frontend/**'
+            backend:
+              - 'backend/**'
+
+  # ---------------------------------
+  # 2️⃣ Backend
+  # ---------------------------------
+  backend:
+    name: 🐍 Backend - Lint, Tests & Security
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          pip install -r requirements.txt
+          pip install pytest pytest-cov ruff bandit
+
+      # 🔹 Lint
+      - name: Ruff Lint
+        run: |
+          ruff check .
+          ruff format --check .
+
+      # 🔹 Tests with Coverage (fail-under obrigatório)
+      - name: Run Tests with Coverage
+        run: |
+          pytest \
+            --cov=app \
+            --cov-report=term-missing \
+            --cov-report=xml \
+            --cov-report=html \
+            --cov-fail-under=85 \
+            --junitxml=junit.xml
+
+      # 🔹 Security Scan
+      - name: Security Scan (Bandit)
+        run: bandit -r app -ll
+
+      # 🔹 Upload Coverage
+      - name: Upload Coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: backend/coverage.xml
+          flags: backend
+          token: ${{ secrets.CODECOV_TOKEN }}
+          slug: DiasPedroQA/SkyNet-Mobile
+          fail_ci_if_error: true
+
+      # 🔹 Upload Test Results
+      - name: Upload Test Results
+        if: always()
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: backend/junit.xml
+
+  # ---------------------------------
+  # 3️⃣ Frontend
+  # ---------------------------------
+  frontend:
+    name: ⚛️ Frontend - Lint, Tests & Build
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+        continue-on-error: false
+
+      - name: Run Tests
+        run: npm test -- --watchAll=false --coverage
+
+      - name: Build
+        run: npm run build
+
+      - name: Upload Frontend Coverage
+        uses: codecov/codecov-action@v5
+        with:
+          directory: ./frontend/coverage
+          flags: frontend
+          token: ${{ secrets.CODECOV_TOKEN }}
+        continue-on-error: true
+
+  # ---------------------------------
+  # 4️⃣ Final Validation
+  # ---------------------------------
+  validate-all:
+    name: 📢 Final Validation
+    needs: [backend, frontend]
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: Show Status
+        run: |
+          echo "Backend: ${{ needs.backend.result }}"
+          echo "Frontend: ${{ needs.frontend.result }}"
+
+      - name: Validate Critical Jobs
+        run: |
+          if [[ "${{ needs.backend.result }}" == "failure" ]]; then
+            echo "❌ Backend failed. Blocking merge."
+            exit 1
+          fi
+
+          echo "✅ Pipeline completed successfully."

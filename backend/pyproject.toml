@@ -7,7 +7,7 @@ requires-python = ">=3.11"
 authors = [
     {name = "DiasPedroQA", email = "your_email@example.com"}
 ]
-license = {text = "MIT"}
+license = {text = "GNU"}
 keywords = ["fastapi", "favorites", "bookmarks", "api"]
 
 dependencies = [
