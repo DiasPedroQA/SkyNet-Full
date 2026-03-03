@@ -1,154 +1,73 @@
-# .gitignore reestruturado e comentado em pt-br
-# Objetivo: evitar commit de artefatos locais, arquivos gerados e ambientes virtuais.
-
-# -------------------------
-# Backend (Python)
-# -------------------------
-# ambiente virtual local do backend
-/backend/.venv/
-backend/.venv/
-/backend/.SkyNet-Mobile-VENV/
-backend/.SkyNet-Mobile-VENV/
-backend/SkyNet-Mobile/
-
-# variáveis de ambiente
-backend/.env
+# ==========================================================
+# 🔐 Environment & Secrets
+# ==========================================================
 .env
 .env.*
+!.env.example
 
-# caches e artefatos de teste/coverage
-backend/.pytest_cache/
-.pytest_cache/
-backend/.coverage
-.coverage
-htmlcov/
-
-# cache do ruff e artefatos do linter/formatador
-backend/.ruff_cache/
-.ruff_cache/
-
-# diretórios de bytecode / cache
+# ==========================================================
+# 🐍 Python
+# ==========================================================
 __pycache__/
-backend/__pycache__/
 *.py[cod]
-*.pyo
-*.pyd
+*$py.class
+*.so
 
-# SQL / DB local (ex.: sqlite)
-db.sqlite3
-db.sqlite3-journal
-
-# -------------------------
-# Distribuição / empacotamento
-# -------------------------
+# Distribution / packaging
 build/
 dist/
+.eggs/
 *.egg-info/
 *.egg
-wheels/
-*.whl
+pip-wheel-metadata/
 
-# pip / installer logs
-pip-log.txt
-pip-delete-this-directory.txt
-
-# -------------------------
-# Ferramentas de teste / coverage / CI
-# -------------------------
-.nox/
-.tox/
-.coverage.*
-.coverage
-coverage.xml
-nosetests.xml
-.hypothesis/
-
-# -------------------------
-# Editor / IDE / SO
-# -------------------------
-# VSCode
-.vscode/
-
-# JetBrains / PyCharm
-.idea/
-
-# sistema operacional
-.DS_Store
-Thumbs.db
-
-# -------------------------
-# Node / Frontend
-# -------------------------
-frontend/node_modules/
-frontend/dist/
-dist/
-.vite/
-
-# caches do frontend / bundlers
-*.tsbuildinfo
-.nyc_output/
-coverage/
-*.lcov
-
-# -------------------------
-# Virtualenvs / ambientes
-# -------------------------
-# nomes comuns para ambientes locais
-.env
-.SkyNet-Mobile-VENV/
-SkyNet-Mobile-VENV/
-env/
-ENV/
-env.bak/
-SkyNet-Mobile-VENV.bak/
+# Virtual Environments
 .venv/
 venv/
 env/
-ENV/
-env.bak/
-venv.bak/
-.pdm-python
-.pixi
+**/.SkyNet-Mobile-VENV/
 
-# PEP 582
-__pypackages__/
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
 
-# -------------------------
-# Arquivos temporários / logs / misc
-# -------------------------
-*.log
-*.tmp
-*.swp
-*.swo
-
-# arquivos binários / extensões C
-*.so
-
-# -------------------------
-# Ferramentas específicas / caches
-# -------------------------
+# Type checking
 .mypy_cache/
 .pyre/
-.pytype/
-.dmypy.json
-.dmypy.json
 
-# Ruff cache (duplicado intencional: ponto geral e backend específico)
-.ruff_cache/
+# Logs
+*.log
 
-# Cursor / ferramentas AI
-.cursorignore
-.cursorindexingignore
+# SQLite
+*.db
+*.sqlite3
 
-# arquivos de build específicos
-.Python
-.installed.cfg
-MANIFEST
+# ==========================================================
+# 🖥️ IDE / Editor
+# ==========================================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
 
-# -------------------------
-# Notas:
-# - Mantenha padrões específicos de projeto (ex.: backend/SkyNet-Mobile/) para
-#   evitar commitar ambientes criados localmente.
-# - Se usar Poetry/Poetry.lock/poetry.lock, considere commitar o lockfile e
-#   não ignorá-lo (comentado por padrão).
-# -------------------------
+# ==========================================================
+# 🌐 Node / Frontend
+# ==========================================================
+node_modules/
+frontend/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Build output
+frontend/build/
+frontend/dist/
+
+# ==========================================================
+# OS
+# ==========================================================
+Thumbs.db

@@ -179,7 +179,7 @@ Com o backend rodando:
 
 ### Endpoints
 
-| Método | Rota                     | Descrição       |
+| Método |           Rota           |    Descrição    |
 | ------ | ------------------------ | --------------- |
 | GET    | /api/v1/favorites        | Lista favoritos |
 | POST   | /api/v1/favorites/upload | Upload HTML     |
@@ -231,14 +231,16 @@ Projeto preparado para:
 
 ---
 
-## 👨‍💻 Autor
+## 👨‍💻 Author
 
 **Dias Pedro**
 QA Engineer & Backend Developer
-GitHub: @diaspedro
+GitHub: @DiasPedroQA
 
 ---
 
 ## 📄 Licença
 
 GNU
+
+---
