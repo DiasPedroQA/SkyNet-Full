@@ -1,95 +1,93 @@
 # backend/config.py
 
 """
-Configuração central da aplicação.
+Configuração central da aplicação usando Pydantic Settings (v2).
 
 Responsável por:
-- Carregar variáveis do .env
-- Converter tipos
-- Definir valores padrão seguros
+- Carregar variáveis automaticamente do .env
+- Converter tipos automaticamente
+- Validar valores
+- Fornecer defaults seguros
 - Expor propriedades utilitárias
 """
 
-import json
-import os
 from functools import lru_cache
 from pathlib import Path
+from typing import Literal
 
-from dotenv import load_dotenv
-
-# =============================================================================
-# Carregamento do .env (determinístico)
-# =============================================================================
-
-BASE_DIR: Path = Path(__file__).resolve().parent.parent
-ENV_FILE: Path = BASE_DIR / ".env"
-
-load_dotenv(ENV_FILE)
+from pydantic import Field, field_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-# =============================================================================
-# Settings
-# =============================================================================
-
-
-class Settings:
+class Settings(BaseSettings):
     """
-    Configurações da aplicação carregadas do ambiente.
+    Configurações globais da aplicação.
+
+    Os valores são carregados automaticamente do arquivo `.env`
+    ou das variáveis de ambiente do sistema.
     """
 
-    def __init__(self) -> None:
-
-        # ---------------------------------------------------------------------
-        # Aplicação
-        # ---------------------------------------------------------------------
-        self.app_name: str = os.getenv("APP_NAME", "File Manager API")
-        self.app_version: str = os.getenv("APP_VERSION", "1.0.0")
-        self.environment: str = os.getenv("ENVIRONMENT", "development")
-
-        # ---------------------------------------------------------------------
-        # Servidor
-        # ---------------------------------------------------------------------
-        self.api_host: str = os.getenv("API_HOST", "0.0.0.0")
-        self.api_port: int = int(os.getenv("API_PORT", "8000"))
-        self.api_debug: bool = os.getenv("API_DEBUG", "false").lower() == "true"
-
-        # ---------------------------------------------------------------------
-        # Banco de Dados
-        # ---------------------------------------------------------------------
-        self.database_url: str = os.getenv(
-            "DATABASE_URL",
-            "sqlite:///./backend/database.db",
-        )
-
-        # ---------------------------------------------------------------------
-        # Upload
-        # ---------------------------------------------------------------------
-        self.upload_dir: Path = Path(os.getenv("UPLOAD_DIR", "./uploads"))
-        self.max_upload_size: int = int(os.getenv("MAX_UPLOAD_SIZE", "10485760"))
-
-        self.allowed_extensions: list[str] = self._parse_extensions()
-
-        # ---------------------------------------------------------------------
-        # Logging
-        # ---------------------------------------------------------------------
-        self.log_level: str = os.getenv("LOG_LEVEL", "INFO")
-        log_file: str | None = os.getenv("LOG_FILE")
-        self.log_file: Path | None = Path(log_file) if log_file else None
-
     # =========================================================================
-    # Métodos auxiliares
+    # Aplicação
     # =========================================================================
 
-    @staticmethod
-    def _parse_extensions() -> list[str]:
-        raw: str = os.getenv(
-            "ALLOWED_EXTENSIONS",
-            '[".jpg", ".png", ".pdf"]',
-        )
-        try:
-            return json.loads(raw)
-        except json.JSONDecodeError:
-            return [".jpg", ".png", ".pdf"]
+    app_name: str = Field(default="SkyNet-Mobile API")
+    app_version: str = Field(default="1.0.0")
+    environment: Literal["development", "testing", "production"] = "development"
+
+    # =========================================================================
+    # Servidor
+    # =========================================================================
+
+    api_host: str = "0.0.0.0"
+    api_port: int = 8000
+    api_debug: bool = False
+
+    # =========================================================================
+    # Banco de Dados
+    # =========================================================================
+
+    database_url: str = "sqlite:///./backend/database.db"
+
+    # =========================================================================
+    # Upload
+    # =========================================================================
+
+    upload_dir: Path = Path("./uploads")
+    max_upload_size: int = 10 * 1024 * 1024  # 10MB
+    allowed_extensions: list[str] = [".jpg", ".png", ".pdf"]
+
+    # =========================================================================
+    # Logging
+    # =========================================================================
+
+    log_level: str = "INFO"
+    log_file: Path | None = None
+
+    # =========================================================================
+    # Configuração do Pydantic Settings
+    # =========================================================================
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+        extra="ignore",
+    )
+
+    # =========================================================================
+    # Validações
+    # =========================================================================
+
+    @field_validator("api_debug")
+    @classmethod
+    def validate_debug_in_production(cls, value: bool, info) -> bool:
+        """
+        Garante que debug não esteja ativado em produção.
+        """
+        if info.data.get("environment") == "production" and value:
+            raise ValueError("api_debug não pode ser True em produção")
+        return value
 
     # =========================================================================
     # Propriedades úteis
@@ -97,19 +95,26 @@ class Settings:
 
     @property
     def is_development(self) -> bool:
-        """Retorna True se o ambiente for desenvolvimento."""
-        return self.environment.lower() == "development"
+        """Retorna True se o ambiente for development."""
+        return self.environment == "development"
+
+    @property
+    def is_production(self) -> bool:
+        """Retorna True se o ambiente for production."""
+        return self.environment == "production"
 
 
 # =============================================================================
-# Instância Singleton
+# Instância Singleton (cacheada)
 # =============================================================================
 
 
-@lru_cache()
+@lru_cache
 def get_settings() -> Settings:
     """
-    Retorna uma instância cacheada das configurações.
+    Retorna instância única e cacheada de Settings.
+
+    Evita recriação desnecessária e mantém padrão singleton.
     """
     return Settings()
 

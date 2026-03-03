@@ -1,20 +1,17 @@
 # SkyNet-Mobile
 
-Analisador inteligente de favoritos com arquitetura fullstack, testes automatizados e pipeline de qualidade contínua.
+Analisador inteligente de favoritos com arquitetura fullstack moderna, foco em qualidade, testes automatizados e evolução contínua.
 
 ---
 
 ## 📊 Status do Projeto
 
 ![Python](https://img.shields.io/badge/python-3.12-blue)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.129-green)
+![FastAPI](https://img.shields.io/badge/FastAPI-latest-green)
 ![React](https://img.shields.io/badge/React-18-blue)
-[![CI](https://github.com/DiasPedroQA/SkyNet-Mobile/actions/workflows/test-multi-os.yml/badge.svg?branch=main)](https://github.com/DiasPedroQA/SkyNet-Mobile/actions)
-[![Coverage](https://codecov.io/gh/DiasPedroQA/SkyNet-Mobile/branch/main/graph/badge.svg)](https://codecov.io/gh/DiasPedroQA/SkyNet-Mobile)
-![Python](https://img.shields.io/badge/python-3.10%20|%203.11%20|%203.12-blue)
 ![License](https://img.shields.io/badge/license-GNU-green)
 
-> 🔬 Projeto estruturado com foco em qualidade, testes automatizados e evolução contínua.
+> Projeto estruturado com foco em boas práticas de engenharia de software, arquitetura desacoplada e alta testabilidade.
 
 ---
 
@@ -22,93 +19,96 @@ Analisador inteligente de favoritos com arquitetura fullstack, testes automatiza
 
 SkyNet-Mobile é uma aplicação fullstack que:
 
-* Processa arquivos HTML de favoritos exportados de navegadores
-* Organiza e estrutura os links
-* Prepara os dados para análises inteligentes futuras
-* Mantém alto padrão de qualidade de código
+- Processa arquivos HTML de favoritos exportados de navegadores
+- Organiza e estrutura links
+- Permite CRUD de favoritos
+- Prepara dados para análises inteligentes futuras
+- Mantém alto padrão arquitetural e de qualidade
 
 ---
 
-## 🧪 Cultura de Qualidade
+## 🏗 Arquitetura Geral
 
-Inspirado no projeto **test-SO**, o SkyNet-Mobile adota:
+```text
+SkyNet-Mobile/
+├── backend/     → API REST (FastAPI)
+├── frontend/    → Interface Web (React + TypeScript)
+└── .github/     → CI/CD e automações
+````
 
-* ✔ Testes automatizados no backend e frontend
-* ✔ Cobertura de código monitorada
-* ✔ Integração contínua via GitHub Actions
-* ✔ Separação clara entre camadas (API, Services, Core, Models)
-* ✔ Arquitetura desacoplada e testável
-* ✔ Pronto para análise estática de segurança (Bandit)
-* ✔ Estrutura preparada para cobertura mínima obrigatória
+### Princípios Arquiteturais
+
+- Separação de responsabilidades
+- Arquitetura em camadas
+- Código desacoplado
+- Alta testabilidade
+- Preparado para CI/CD
 
 ---
 
-## 🏗 Arquitetura
+## 🐍 Backend
 
-### Backend (FastAPI)
+API REST responsável por:
+
+- Gerenciamento de favoritos
+- Upload e processamento de HTML
+- Regras de negócio
+- Persistência em banco de dados
 
 ```text
 backend/
-├── app/
-│   ├── api/        → Rotas e controllers
-│   ├── core/       → Configurações e utilitários centrais
-│   ├── models/     → Modelos de domínio
-│   ├── services/   → Regras de negócio
-│   └── main.py     → Inicialização da aplicação
+├── controllers/
+├── services/
+├── models/
+├── infrastructure/
 └── tests/
 ```
 
-#### Princípios adotados
+📖 Documentação automática disponível em:
 
-* Separação de responsabilidades
-* Services independentes de framework
-* Testes desacoplados de I/O
-* Preparado para expansão de domínio
+- [http://localhost:8000/docs](http://localhost:8000/docs)
+- [http://localhost:8000/redoc](http://localhost:8000/redoc)
+
+📌 Documentação técnica detalhada disponível em:
+
+```text
+backend/README.md
+```
 
 ---
 
-### Frontend (React + TypeScript)
+## ⚛ Frontend
+
+Interface web responsável por:
+
+- Upload de favoritos
+- Visualização e manipulação
+- Comunicação com API
 
 ```text
 frontend/
-├── src/
-│   ├── components/
-│   ├── pages/
-│   └── services/
-└── public/
+├── components/
+├── pages/
+├── services/
+├── hooks/
+└── tests/
 ```
-
-* Tipagem estática com TypeScript
-* Testes unitários com Jest
-* Testes E2E com Cypress
 
 ---
 
 ## 🚀 Início Rápido
 
-### Pré-requisitos
-
-* Python 3.12+
-* Node.js 18+
-* Docker (opcional)
-
----
-
-### ▶ Backend
+### Backend
 
 ```bash
 cd backend
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-uvicorn app.main:app --reload
+uvicorn main:app --reload
 ```
 
-Acesse: [http://localhost:8000](http://localhost:8000)
-
----
-
-### ▶ Frontend
+### Frontend
 
 ```bash
 cd frontend
@@ -116,126 +116,66 @@ npm install
 npm start
 ```
 
-Acesse: [http://localhost:3000](http://localhost:3000)
-
 ---
 
-### 🐳 Execução com Docker
+## 🧪 Testes
+
+### - Backend
 
 ```bash
-docker-compose up --build
+pytest --cov=backend --cov-report=term-missing
 ```
 
----
-
-## 🧪 Execução de Testes
-
-### Backend
+### - Frontend
 
 ```bash
-cd backend
-pytest
-pytest -v
-pytest --cov=app --cov-report=term-missing
-```
-
-### Frontend
-
-```bash
-cd frontend
 npm test
 npm run test:e2e
 ```
 
 ---
 
-## 📈 Cobertura de Código
+## 🔐 Segurança (Roadmap)
 
-Objetivo arquitetural:
-
-* Cobertura mínima recomendada: **85%+**
-* Separação clara entre teste unitário e integração
-* Preparado para integração futura com Codecov
-
----
-
-## 🔐 Segurança
-
-Roadmap de segurança inclui:
-
-* Análise estática com Bandit
-* Verificação de dependências
-* Validação robusta de upload de arquivos
-* Sanitização de HTML recebido
-
----
-
-## 📡 Documentação da API
-
-Com o backend rodando:
-
-* Swagger UI: [http://localhost:8000/docs](http://localhost:8000/docs)
-* ReDoc: [http://localhost:8000/redoc](http://localhost:8000/redoc)
-
-### Endpoints
-
-| Método |           Rota           |    Descrição    |
-| ------ | ------------------------ | --------------- |
-| GET    | /api/v1/favorites        | Lista favoritos |
-| POST   | /api/v1/favorites/upload | Upload HTML     |
-| GET    | /health                  | Status da API   |
-
----
-
-## 🔄 Pipeline e CI
-
-Projeto preparado para:
-
-* Execução automática de testes
-* Validação de cobertura
-* Build frontend
-* Análise estática
-* Docker build
+- Validação robusta de upload
+- Sanitização de HTML
+- Análise estática com Bandit
+- Verificação de dependências
 
 ---
 
 ## 📌 Roadmap
 
-* ✔ Estrutura base
-* ✔ CRUD de favoritos
-* ⏳ Upload automático completo
-* ⏳ Dashboard com métricas
-* ⏳ Autenticação de usuários
-* ⏳ Análise de padrões de navegação
-* ⏳ Deploy em produção
-* ⏳ Cobertura mínima obrigatória via CI
-* ⏳ Publicação de métricas públicas
+- ✔ CRUD de favoritos
+- ⏳ Upload completo de HTML
+- ⏳ Dashboard com métricas
+- ⏳ Autenticação
+- ⏳ Deploy
+- ⏳ Cobertura mínima obrigatória via CI
 
 ---
 
 ## 🤝 Contribuição
 
 1. Fork
-2. Branch
+2. Crie uma branch
 3. Commit padronizado
-4. Pull Request
+4. Abra um Pull Request
 
-### Padrão de Commits
+Padrões de commit:
 
-* feat:
-* fix:
-* docs:
-* test:
-* refactor:
-* style:
+- feat:
+- fix:
+- docs:
+- test:
+- refactor:
 
 ---
 
-## 👨‍💻 Author
+## 👨‍💻 Autor
 
-**Dias Pedro**
+Dias Pedro
 QA Engineer & Backend Developer
-GitHub: @DiasPedroQA
 
 ---
 
@@ -243,4 +183,73 @@ GitHub: @DiasPedroQA
 
 GNU
 
+````text
+
 ---
+
+# 📌 Agora crie separadamente:
+
+## backend/README.md
+
+```md
+# SkyNet-Mobile Backend
+
+API REST construída com FastAPI para gerenciamento inteligente de favoritos.
+
+---
+
+## 🏗 Arquitetura
+
+```text
+backend/
+├── controllers/
+├── services/
+├── models/
+├── infrastructure/
+├── schemas/
+└── tests/
+````
+
+### Camadas
+
+- Controller → Camada HTTP
+- Service → Regras de negócio
+- Repository → Persistência
+- Models → Entidades de domínio
+
+---
+
+## 🚀 Executar
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn main:app --reload
+```
+
+---
+
+## - 🧪 Testes
+
+```bash
+pytest --cov=backend --cov-report=term-missing
+```
+
+---
+
+## 🔍 Qualidade
+
+```bash
+ruff check .
+ruff check . --fix
+```
+
+---
+
+## 📝 Variáveis de Ambiente
+
+```ini
+APP_NAME="SkyNet-Mobile API"
+DATABASE_URL="sqlite:///./skynet.db"
+```
