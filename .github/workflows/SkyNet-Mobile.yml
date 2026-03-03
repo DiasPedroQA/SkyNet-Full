@@ -1,5 +1,8 @@
 name: SkyNet CI - Lint, Tests, Security & Build
 
+permissions:
+  contents: read
+
 on:
   push:
     branches: ["main", "develop"]
